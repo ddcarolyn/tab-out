@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tab Out — Theme Previews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=IBM+Plex+Serif:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Space+Grotesk:wght@400;500;600&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #2a2a2a;
+    padding: 40px 32px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+  }
+  .page-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 32px;
+    color: #fff;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  .preview {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .preview-label {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    z-index: 10;
+    font-family: 'Inter', sans-serif;
+  }
+  .frame {
+    width: 100%;
+    aspect-ratio: 16/10;
+    display: flex;
+    flex-direction: column;
+  }
+  .bm-bar {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-size: 11px;
+  }
+  .bm-bar .item { display: inline-flex; align-items: center; gap: 5px; }
+  .bm-bar .dot { width: 12px; height: 12px; border-radius: 3px; }
+  .body {
+    flex: 1;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+  .greeting { font-size: 22px; font-weight: 300; letter-spacing: -0.5px; }
+  .date { font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; opacity: 0.7; }
+  .waffle {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; grid-template-columns: repeat(3, 3px); gap: 2px;
+    align-content: center; justify-content: center;
+    padding: 6px;
+  }
+  .waffle span { width: 3px; height: 3px; border-radius: 50%; }
+  .section-h {
+    font-size: 13px; font-weight: 500;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .card {
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+  }
+  .card-title { font-weight: 600; margin-bottom: 6px; font-size: 12px; }
+  .card-tab { padding: 3px 0; opacity: 0.85; }
+
+  /* ============ Theme 1: 极简黑白 ============ */
+  .t1 .frame { background: #ffffff; color: #111; font-family: 'Inter', sans-serif; }
+  .t1 .bm-bar { background: #fafafa; border-bottom: 1px solid #e5e5e5; color: #444; }
+  .t1 .bm-bar .dot { background: #e5e5e5; }
+  .t1 .top-row { border-bottom: 1px solid #e5e5e5; }
+  .t1 .greeting { color: #111; font-weight: 600; letter-spacing: -0.8px; }
+  .t1 .date { color: #888; }
+  .t1 .waffle { background: #f0f0f0; color: #333; }
+  .t1 .waffle span { background: #333; }
+  .t1 .section-h { color: #888; }
+  .t1 .card { background: #fafafa; border: 1px solid #e5e5e5; }
+  .t1 .card-title { color: #111; }
+  .t1 .card-tab { color: #555; }
+
+  /* ============ Theme 2: 暗色 ============ */
+  .t2 .frame { background: #0f0f10; color: #e8e8ea; font-family: 'Inter', sans-serif; }
+  .t2 .bm-bar { background: #161618; border-bottom: 1px solid #26262a; color: #c0c0c5; }
+  .t2 .bm-bar .dot { background: #26262a; }
+  .t2 .top-row { border-bottom: 1px solid #26262a; }
+  .t2 .greeting { color: #f5f5f7; }
+  .t2 .date { color: #8a8a90; }
+  .t2 .waffle { background: #1d1d20; color: #c0c0c5; }
+  .t2 .waffle span { background: #5eead4; }
+  .t2 .section-h { color: #8a8a90; }
+  .t2 .card { background: #18181b; border: 1px solid #2a2a2e; }
+  .t2 .card-title { color: #5eead4; }
+  .t2 .card-tab { color: #c0c0c5; }
+
+  /* ============ Theme 3: 现代 SaaS ============ */
+  .t3 .frame { background: #f5f7fb; color: #1a1f2e; font-family: 'Geist', 'Inter', sans-serif; }
+  .t3 .bm-bar { background: #fff; border-bottom: 1px solid #e6eaf2; color: #5b6478; }
+  .t3 .bm-bar .dot { background: #d6def0; }
+  .t3 .top-row { border-bottom: none; }
+  .t3 .greeting { color: #0f172a; font-weight: 500; }
+  .t3 .date { color: #64748b; }
+  .t3 .waffle { background: rgba(99, 102, 241, 0.08); color: #6366f1; }
+  .t3 .waffle span { background: #6366f1; }
+  .t3 .section-h { color: #6366f1; font-weight: 600; }
+  .t3 .card { background: #fff; border: 1px solid #e6eaf2; border-radius: 14px; box-shadow: 0 2px 8px rgba(15,23,42,0.04); padding: 14px 16px; }
+  .t3 .card-title { color: #0f172a; }
+  .t3 .card-tab { color: #475569; }
+
+  /* ============ Theme 4: 当前纸感（微调）============ */
+  .t4 .frame { background: #f8f5f0; color: #1a1613; font-family: 'DM Sans', sans-serif; }
+  .t4 .bm-bar { background: #fffdf9; border-bottom: 1px solid #e8e2da; color: #4a3d34; }
+  .t4 .bm-bar .dot { background: #e8e2da; }
+  .t4 .top-row { border-bottom: 1px solid #e8e2da; }
+  .t4 .greeting { font-family: 'Newsreader', serif; color: #1a1613; font-weight: 300; }
+  .t4 .date { color: #9a918a; }
+  .t4 .waffle { background: #e8e2da; color: #1a1613; }
+  .t4 .waffle span { background: #c8713a; }
+  .t4 .section-h { color: #9a918a; font-family: 'Newsreader', serif; font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 14px; font-style: italic; }
+  .t4 .card { background: #fffdf9; border: 1px solid #e8e2da; }
+  .t4 .card-title { color: #1a1613; }
+  .t4 .card-tab { color: #6b5e54; }
+</style>
+</head>
+<body>
+
+<div class="page-title">Tab Out — 4 Theme Directions</div>
+
+<div class="grid">
+
+  <!-- Theme 1 -->
+  <div class="preview t1">
+    <div class="preview-label">1 · 极简黑白 / Inter</div>
+    <div class="frame">
+      <div class="bm-bar">
+        <span class="item"><span class="dot"></span>Google AI Studio</span>
+        <span class="item"><span class="dot"></span>Google AI</span>
+        <span class="item"><span class="dot"></span>AI 笔记</span>
+      </div>
+      <div class="body">
+        <div class="top-row">
+          <div>
+            <div class="greeting">Good evening</div>
+            <div class="date">SUNDAY, MAY 3</div>
+          </div>
+          <div class="waffle"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="section-h">Right now</div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title">YouTube · 1 tab</div>
+            <div class="card-tab">OpenClaw 全网最细教学</div>
+          </div>
+          <div class="card">
+            <div class="card-title">GitHub · 1 tab</div>
+            <div class="card-tab">zarazhangrui/tab-out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme 2 -->
+  <div class="preview t2">
+    <div class="preview-label">2 · 暗色 / Inter</div>
+    <div class="frame">
+      <div class="bm-bar">
+        <span class="item"><span class="dot"></span>Google AI Studio</span>
+        <span class="item"><span class="dot"></span>Google AI</span>
+        <span class="item"><span class="dot"></span>AI 笔记</span>
+      </div>
+      <div class="body">
+        <div class="top-row">
+          <div>
+            <div class="greeting">Good evening</div>
+            <div class="date">SUNDAY, MAY 3</div>
+          </div>
+          <div class="waffle"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="section-h">Right now</div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title">YouTube · 1 tab</div>
+            <div class="card-tab">OpenClaw 全网最细教学</div>
+          </div>
+          <div class="card">
+            <div class="card-title">GitHub · 1 tab</div>
+            <div class="card-tab">zarazhangrui/tab-out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme 3 -->
+  <div class="preview t3">
+    <div class="preview-label">3 · 现代 SaaS / Geist · Inter</div>
+    <div class="frame">
+      <div class="bm-bar">
+        <span class="item"><span class="dot"></span>Google AI Studio</span>
+        <span class="item"><span class="dot"></span>Google AI</span>
+        <span class="item"><span class="dot"></span>AI 笔记</span>
+      </div>
+      <div class="body">
+        <div class="top-row">
+          <div>
+            <div class="greeting">Good evening</div>
+            <div class="date">SUNDAY, MAY 3</div>
+          </div>
+          <div class="waffle"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="section-h">Right now</div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title">YouTube · 1 tab</div>
+            <div class="card-tab">OpenClaw 全网最细教学</div>
+          </div>
+          <div class="card">
+            <div class="card-title">GitHub · 1 tab</div>
+            <div class="card-tab">zarazhangrui/tab-out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme 4 -->
+  <div class="preview t4">
+    <div class="preview-label">4 · 纸感保留（微调）/ Newsreader · DM Sans</div>
+    <div class="frame">
+      <div class="bm-bar">
+        <span class="item"><span class="dot"></span>Google AI Studio</span>
+        <span class="item"><span class="dot"></span>Google AI</span>
+        <span class="item"><span class="dot"></span>AI 笔记</span>
+      </div>
+      <div class="body">
+        <div class="top-row">
+          <div>
+            <div class="greeting">Good evening</div>
+            <div class="date">SUNDAY, MAY 3</div>
+          </div>
+          <div class="waffle"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="section-h">Right now</div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title">YouTube · 1 tab</div>
+            <div class="card-tab">OpenClaw 全网最细教学</div>
+          </div>
+          <div class="card">
+            <div class="card-title">GitHub · 1 tab</div>
+            <div class="card-tab">zarazhangrui/tab-out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
