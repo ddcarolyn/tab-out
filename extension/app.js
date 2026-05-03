@@ -1633,12 +1633,22 @@ function renderGoogleAppsMenu() {
   if (!btn || !menu) return;
   renderGoogleAppsMenu();
   function positionMenu() {
-    // Standard dropdown: under the button, right-aligned to the button.
-    // position:fixed + z-index 9999 (set in CSS) keeps it above all
-    // dashboard content with an opaque background — no see-through.
+    // Park the menu at the viewport's right edge (24px from edge),
+    // top-aligned with the waffle button. Falls back to under-button
+    // dropdown when the right-side empty space is too narrow.
     const r = btn.getBoundingClientRect();
-    menu.style.top = `${Math.round(r.bottom + 8)}px`;
-    menu.style.right = `${Math.round(window.innerWidth - r.right)}px`;
+    const MENU_WIDTH = 280;     // ~3 tiles * 80px + padding/gaps
+    const RIGHT_GAP = 24;
+    const spaceOnRight = window.innerWidth - r.right;
+    if (spaceOnRight >= MENU_WIDTH + RIGHT_GAP) {
+      // Wide viewport: park in the right margin, beside the button.
+      menu.style.top = `${Math.round(r.top)}px`;
+      menu.style.right = `${RIGHT_GAP}px`;
+    } else {
+      // Narrow viewport: drop down under the button instead.
+      menu.style.top = `${Math.round(r.bottom + 8)}px`;
+      menu.style.right = `${Math.round(window.innerWidth - r.right)}px`;
+    }
     menu.style.left = 'auto';
   }
   btn.addEventListener('click', (e) => {
