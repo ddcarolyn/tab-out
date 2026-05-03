@@ -12,6 +12,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- ================================================================
+     BOOKMARKS BAR — top-of-page bar that mirrors Chrome's bookmarks bar.
+     Chrome doesn't show its native bookmarks bar on extension-overridden
+     new tab pages, so we render bookmarks here using chrome.bookmarks.
+     Populated by renderBookmarksBar() in app.js.
+     ================================================================ -->
+<nav class="bookmarks-bar" id="bookmarksBar" aria-label="Bookmarks">
+  <div class="bookmarks-bar-inner" id="bookmarksBarInner"></div>
+</nav>
+
 <div class="container">
 
 
@@ -25,6 +36,22 @@
       <h1 id="greeting"></h1>
       <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
       <div class="date" id="dateDisplay"></div>
+    </div>
+
+    <!-- ================================================================
+         GOOGLE APPS LAUNCHER — 9-dot waffle button + dropdown of Google
+         services (Gmail, Drive, Docs, Sheets, Calendar, ...). Mirrors the
+         shortcut that Chrome shows on its native NTP.
+         ================================================================ -->
+    <div class="google-apps" id="googleApps">
+      <button class="google-apps-btn" id="googleAppsBtn" type="button" aria-label="Google apps" aria-haspopup="true" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/>
+          <circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
+          <circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/>
+        </svg>
+      </button>
+      <div class="google-apps-menu" id="googleAppsMenu" hidden></div>
     </div>
   </header>
 
