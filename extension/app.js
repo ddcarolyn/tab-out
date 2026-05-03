@@ -1477,6 +1477,166 @@ document.addEventListener('input', async (e) => {
 
 
 /* ----------------------------------------------------------------
+   BOOKMARKS BAR — render bookmarks from chrome.bookmarks at the top
+   of the page. Chrome doesn't surface its native bookmarks bar on
+   extension-overridden NTPs, so we render an in-page version.
+   ---------------------------------------------------------------- */
+const FAVICON_FALLBACK_SVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="%239a918a"/></svg>'
+);
+
+function faviconUrl(pageUrl, size = 32) {
+  // MV3 favicon API: chrome-extension://<id>/_favicon/?pageUrl=...&size=32
+  // Requires "favicon" permission in manifest.
+  try {
+    const u = new URL(chrome.runtime.getURL('/_favicon/'));
+    u.searchParams.set('pageUrl', pageUrl);
+    u.searchParams.set('size', String(size));
+    return u.toString();
+  } catch {
+    return FAVICON_FALLBACK_SVG;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function bookmarkItemHtml(node) {
+  // Leaf bookmark
+  const title = node.title || node.url || 'Untitled';
+  const safeTitle = escapeHtml(title);
+  const safeUrl = escapeHtml(node.url);
+  const icon = node.url
+    ? `<img src="${escapeHtml(faviconUrl(node.url))}" alt="" onerror="this.src='${FAVICON_FALLBACK_SVG}'">`
+    : '';
+  return `<a class="bookmark-item" href="${safeUrl}" title="${safeTitle}" data-bookmark-url="${safeUrl}">${icon}<span class="bookmark-title">${safeTitle}</span></a>`;
+}
+
+function bookmarkFolderHtml(node) {
+  const safeTitle = escapeHtml(node.title || 'Folder');
+  // Folder icon (heroicons folder)
+  const folderSvg = `<svg class="bookmark-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>`;
+  const childrenHtml = (node.children || []).map(child =>
+    child.url ? bookmarkItemHtml(child) : bookmarkFolderHtml(child)
+  ).join('') || '<div class="bookmark-empty">Empty folder</div>';
+  return `<div class="bookmark-folder-wrap">
+    <button class="bookmark-item bookmark-folder" type="button" data-bookmark-folder="1" aria-haspopup="true" aria-expanded="false">
+      ${folderSvg}<span class="bookmark-title">${safeTitle}</span>
+    </button>
+    <div class="bookmark-folder-menu" hidden>${childrenHtml}</div>
+  </div>`;
+}
+
+async function renderBookmarksBar() {
+  const inner = document.getElementById('bookmarksBarInner');
+  const bar = document.getElementById('bookmarksBar');
+  if (!inner || !bar) return;
+  if (!chrome.bookmarks || !chrome.bookmarks.getTree) {
+    bar.style.display = 'none';
+    return;
+  }
+  try {
+    const tree = await chrome.bookmarks.getTree();
+    // The "Bookmarks bar" is typically children[0] of the root.
+    const root = tree[0];
+    const bookmarksBarNode = (root.children || []).find(c => c.id === '1') || (root.children || [])[0];
+    const items = bookmarksBarNode?.children || [];
+    if (!items.length) {
+      inner.innerHTML = '<div class="bookmark-empty">No bookmarks yet — add some to your bookmarks bar.</div>';
+      return;
+    }
+    inner.innerHTML = items.map(node =>
+      node.url ? bookmarkItemHtml(node) : bookmarkFolderHtml(node)
+    ).join('');
+  } catch (err) {
+    console.warn('[tab-out] Failed to load bookmarks:', err);
+    bar.style.display = 'none';
+  }
+}
+
+// Folder dropdowns: toggle on click, close on outside click.
+document.addEventListener('click', (e) => {
+  const folderBtn = e.target.closest('.bookmark-folder');
+  if (folderBtn) {
+    e.preventDefault();
+    const wrap = folderBtn.closest('.bookmark-folder-wrap');
+    const menu = wrap.querySelector('.bookmark-folder-menu');
+    const isOpen = !menu.hidden;
+    // Close any other open folder menus
+    document.querySelectorAll('.bookmark-folder-menu').forEach(m => { m.hidden = true; });
+    document.querySelectorAll('.bookmark-folder[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    menu.hidden = isOpen;
+    folderBtn.setAttribute('aria-expanded', String(!isOpen));
+    return;
+  }
+  // Click on a bookmark link inside a folder menu — let it navigate, but close the menu.
+  const bookmarkLink = e.target.closest('.bookmark-folder-menu .bookmark-item');
+  if (!bookmarkLink) {
+    // Outside click: close all folder menus
+    document.querySelectorAll('.bookmark-folder-menu').forEach(m => { m.hidden = true; });
+    document.querySelectorAll('.bookmark-folder[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  }
+});
+
+/* ----------------------------------------------------------------
+   GOOGLE APPS LAUNCHER — 9-dot waffle dropdown with shortcuts to
+   common Google services.
+   ---------------------------------------------------------------- */
+const GOOGLE_APPS = [
+  { name: 'Account',  url: 'https://myaccount.google.com',          color: '#4285F4', letter: 'A' },
+  { name: 'Search',   url: 'https://www.google.com',                color: '#4285F4', letter: 'G' },
+  { name: 'Gmail',    url: 'https://mail.google.com',               color: '#EA4335', letter: 'M' },
+  { name: 'Drive',    url: 'https://drive.google.com',              color: '#1FA463', letter: 'D' },
+  { name: 'Docs',     url: 'https://docs.google.com/document',      color: '#4285F4', letter: 'D' },
+  { name: 'Sheets',   url: 'https://docs.google.com/spreadsheets',  color: '#0F9D58', letter: 'S' },
+  { name: 'Slides',   url: 'https://docs.google.com/presentation',  color: '#F4B400', letter: 'P' },
+  { name: 'Calendar', url: 'https://calendar.google.com',           color: '#4285F4', letter: 'C' },
+  { name: 'Meet',     url: 'https://meet.google.com',               color: '#00897B', letter: 'M' },
+  { name: 'YouTube',  url: 'https://www.youtube.com',               color: '#FF0000', letter: 'Y' },
+  { name: 'Maps',     url: 'https://maps.google.com',               color: '#34A853', letter: 'M' },
+  { name: 'Photos',   url: 'https://photos.google.com',             color: '#EA4335', letter: 'P' },
+];
+
+function renderGoogleAppsMenu() {
+  const menu = document.getElementById('googleAppsMenu');
+  if (!menu) return;
+  menu.innerHTML = GOOGLE_APPS.map(app => `
+    <a class="google-app-tile" href="${escapeHtml(app.url)}" target="_top" rel="noopener">
+      <span class="google-app-icon" aria-hidden="true" style="background:${app.color};color:#fff;border-radius:50%;font-weight:600;font-size:12px;">${app.letter}</span>
+      <span>${escapeHtml(app.name)}</span>
+    </a>
+  `).join('');
+}
+
+(function setupGoogleAppsLauncher() {
+  const btn = document.getElementById('googleAppsBtn');
+  const menu = document.getElementById('googleAppsMenu');
+  if (!btn || !menu) return;
+  renderGoogleAppsMenu();
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = !menu.hidden;
+    menu.hidden = open;
+    btn.setAttribute('aria-expanded', String(!open));
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#googleApps')) return;
+    menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+})();
+
+/* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
+renderBookmarksBar();
 renderDashboard();
