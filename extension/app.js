@@ -1510,7 +1510,7 @@ function bookmarkItemHtml(node) {
   const safeTitle = escapeHtml(title);
   const safeUrl = escapeHtml(node.url);
   const icon = node.url
-    ? `<img src="${escapeHtml(faviconUrl(node.url))}" alt="" onerror="this.src='${FAVICON_FALLBACK_SVG}'">`
+    ? `<img class="bookmark-favicon" src="${escapeHtml(faviconUrl(node.url))}" alt="" data-fallback="1">`
     : '';
   return `<a class="bookmark-item" href="${safeUrl}" title="${safeTitle}" data-bookmark-url="${safeUrl}">${icon}<span class="bookmark-title">${safeTitle}</span></a>`;
 }
@@ -1551,6 +1551,10 @@ async function renderBookmarksBar() {
     inner.innerHTML = items.map(node =>
       node.url ? bookmarkItemHtml(node) : bookmarkFolderHtml(node)
     ).join('');
+    // Attach favicon fallback handlers (CSP forbids inline onerror).
+    bar.querySelectorAll('img.bookmark-favicon[data-fallback]').forEach(img => {
+      img.addEventListener('error', () => { img.src = FAVICON_FALLBACK_SVG; }, { once: true });
+    });
   } catch (err) {
     console.warn('[tab-out] Failed to load bookmarks:', err);
     bar.style.display = 'none';
