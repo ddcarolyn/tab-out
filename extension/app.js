@@ -1633,11 +1633,11 @@ function renderGoogleAppsMenu() {
   if (!btn || !menu) return;
   renderGoogleAppsMenu();
   function positionMenu() {
+    // Park the menu in the viewport's right-side empty space (outside the
+    // 1300px container). Top-aligned with the waffle button.
     const r = btn.getBoundingClientRect();
-    // Show menu under-and-aligned to the button's right edge.
-    // Use right anchor so the menu stays inside the viewport.
-    menu.style.top = `${Math.round(r.bottom + 8)}px`;
-    menu.style.right = `${Math.round(window.innerWidth - r.right)}px`;
+    menu.style.top = `${Math.round(r.top)}px`;
+    menu.style.right = `24px`;
     menu.style.left = 'auto';
   }
   btn.addEventListener('click', (e) => {
