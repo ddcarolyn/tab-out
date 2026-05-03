@@ -1632,12 +1632,28 @@ function renderGoogleAppsMenu() {
   const menu = document.getElementById('googleAppsMenu');
   if (!btn || !menu) return;
   renderGoogleAppsMenu();
+  function positionMenu() {
+    const r = btn.getBoundingClientRect();
+    // Show menu under-and-aligned to the button's right edge.
+    // Use right anchor so the menu stays inside the viewport.
+    menu.style.top = `${Math.round(r.bottom + 8)}px`;
+    menu.style.right = `${Math.round(window.innerWidth - r.right)}px`;
+    menu.style.left = 'auto';
+  }
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const open = !menu.hidden;
-    menu.hidden = open;
-    btn.setAttribute('aria-expanded', String(!open));
+    if (!open) {
+      positionMenu();
+      menu.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
   });
+  window.addEventListener('resize', () => { if (!menu.hidden) positionMenu(); });
+  window.addEventListener('scroll', () => { if (!menu.hidden) positionMenu(); }, true);
   document.addEventListener('click', (e) => {
     if (e.target.closest('#googleApps')) return;
     menu.hidden = true;
