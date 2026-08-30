@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
+  <!-- Display-mode gate — MUST load first: decides synchronously whether
+       this new tab should redirect to Google (sidebar mode) before paint -->
+  <script src="mode.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Out</title>
 
@@ -44,6 +48,19 @@
          services (Gmail, Drive, Docs, Sheets, Calendar, ...). Mirrors the
          shortcut that Chrome shows on its native NTP.
          ================================================================ -->
+    <div class="header-actions">
+
+    <!-- ================================================================
+         DISPLAY MODE TOGGLE — switch between full-page new tab and the
+         Chrome side panel. Label/title set by updateModeToggle() in app.js
+         ================================================================ -->
+    <button class="mode-toggle-btn" id="modeToggleBtn" type="button" data-action="toggle-display-mode">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="16" height="16" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5H3.75a1.5 1.5 0 0 1-1.5-1.5V6.75a1.5 1.5 0 0 1 1.5-1.5Z M9 5.25v13.5" />
+      </svg>
+      <span id="modeToggleLabel"></span>
+    </button>
+
     <div class="google-apps" id="googleApps">
       <button class="google-apps-btn" id="googleAppsBtn" type="button" aria-label="Google apps" aria-haspopup="true" aria-expanded="false">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
@@ -54,6 +71,8 @@
       </button>
       <div class="google-apps-menu" id="googleAppsMenu" hidden></div>
     </div>
+
+    </div><!-- end .header-actions -->
   </header>
 
   <!-- ================================================================
