@@ -87,6 +87,12 @@ chrome.tabs.onUpdated.addListener(() => {
   updateBadge();
 });
 
+// ─── Side panel ──────────────────────────────────────────────────────────────
+
+// Clicking the toolbar icon opens the Tab Out side panel (works in both
+// display modes — the panel is always one click away).
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
 // ─── Initial run ─────────────────────────────────────────────────────────────
 
 // Run once immediately when the service worker first loads

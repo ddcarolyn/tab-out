@@ -17,6 +17,57 @@
 
 
 /* ----------------------------------------------------------------
+   DISPLAY MODE — full page vs. side panel
+
+   mode.js (loaded first in <head>) already decided whether this page
+   should exist at all; here we just expose helpers for the toggle UI.
+
+   'page'  → classic: new tab IS the dashboard
+   'panel' → dashboard lives in the Chrome side panel, new tab → Google
+   ---------------------------------------------------------------- */
+
+// Set by mode.js — true when we're rendering inside the side panel
+const IS_PANEL = window.TABOUT_IS_PANEL === true;
+
+function getDisplayMode() {
+  try {
+    return localStorage.getItem('taboutDisplayMode') === 'panel' ? 'panel' : 'page';
+  } catch {
+    return 'page';
+  }
+}
+
+function setDisplayMode(mode) {
+  try { localStorage.setItem('taboutDisplayMode', mode); } catch {}
+  updateModeToggle();
+}
+
+/**
+ * updateModeToggle()
+ *
+ * Keeps the header toggle button's label in sync with context + mode.
+ *  - On the new tab page: offer to move into the side panel.
+ *  - In the side panel: offer to flip where new tabs go.
+ */
+function updateModeToggle() {
+  const label = document.getElementById('modeToggleLabel');
+  const btn = document.getElementById('modeToggleBtn');
+  if (!label || !btn) return;
+
+  if (!IS_PANEL) {
+    label.textContent = 'Move to sidebar';
+    btn.title = 'Switch to sidebar mode — the dashboard moves to Chrome\'s side panel and new tabs go back to Google';
+  } else if (getDisplayMode() === 'panel') {
+    label.textContent = 'Back to full page';
+    btn.title = 'Switch back — new tabs show the full Tab Out page again';
+  } else {
+    label.textContent = 'Sidebar mode';
+    btn.title = 'Hand new tabs back to Google and keep Tab Out here in the side panel';
+  }
+}
+
+
+/* ----------------------------------------------------------------
    CHROME TABS — Direct API Access
 
    Since this page IS the extension's new tab page, it has full
@@ -1188,6 +1239,36 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
+  // ---- Toggle display mode (full page ⇄ side panel) ----
+  if (action === 'toggle-display-mode') {
+    if (!IS_PANEL) {
+      // From the new tab page: enable sidebar mode, open the panel
+      // (allowed here — we're inside a user gesture), then hand this
+      // tab back to Google.
+      setDisplayMode('panel');
+      try {
+        const win = await chrome.windows.getCurrent();
+        await chrome.sidePanel.open({ windowId: win.id });
+      } catch {
+        // Panel API unavailable (old Chrome) — roll back so new tabs
+        // don't redirect into a mode that can't render anywhere.
+        setDisplayMode('page');
+        showToast('Side panel not supported in this Chrome version');
+        return;
+      }
+      location.replace('https://www.google.com/');
+    } else if (getDisplayMode() === 'panel') {
+      // In the panel, sidebar mode on → flip back to full page
+      setDisplayMode('page');
+      showToast('Full page mode — new tabs show Tab Out again');
+    } else {
+      // In the panel, but new tabs still show Tab Out → enable sidebar mode
+      setDisplayMode('panel');
+      showToast('Sidebar mode — new tabs go back to Google');
+    }
+    return;
+  }
+
   // ---- Close duplicate Tab Out tabs ----
   if (action === 'close-tabout-dupes') {
     await closeTabOutDupes();
@@ -1679,7 +1760,32 @@ function renderGoogleAppsMenu() {
 })();
 
 /* ----------------------------------------------------------------
+   LIVE REFRESH (side panel only)
+
+   The new tab page renders once and is replaced on navigation, but the
+   side panel stays open while you browse — so it has to track tab
+   changes itself. Debounced: tab events arrive in bursts.
+   ---------------------------------------------------------------- */
+if (IS_PANEL) {
+  let refreshTimer = null;
+  const scheduleRefresh = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => { renderDashboard(); }, 500);
+  };
+  chrome.tabs.onCreated.addListener(scheduleRefresh);
+  chrome.tabs.onRemoved.addListener(scheduleRefresh);
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    // Only re-render for changes that affect the cards — not every
+    // loading-progress tick
+    if (changeInfo.url || changeInfo.title || changeInfo.status === 'complete') {
+      scheduleRefresh();
+    }
+  });
+}
+
+/* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
+updateModeToggle();
 renderBookmarksBar();
 renderDashboard();
