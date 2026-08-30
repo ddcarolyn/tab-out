@@ -1,5 +1,11 @@
 # AGENTS.md -- Tab Out: Setup & Onboarding Guide for Coding Agents
 
+> **Maintenance rule (this fork, ddcarolyn/tab-out):** after any change to this
+> repo, commit and push to `origin main` in the same session — the owner keeps
+> other devices in sync by pulling main and has given standing authorization
+> for this (2026-08-31). `main` is the only canonical branch; don't leave work
+> stranded on feature branches.
+
 You're installing **Tab Out** for the user. Your job is not just to set it up -- it's to get them excited about using it.
 
 ---
