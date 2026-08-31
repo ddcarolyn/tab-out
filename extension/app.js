@@ -1655,6 +1655,28 @@ async function renderBookmarksBar() {
 }
 
 // Folder dropdowns: toggle on click, close on outside click.
+// The bar scrolls horizontally (overflow-x: auto), which forces overflow-y
+// to clip as well — an absolutely positioned menu gets cut off inside the
+// bar, so the menu is repositioned as fixed to escape that clip.
+function positionFolderMenu(btn, menu) {
+  const rect = btn.getBoundingClientRect();
+  menu.style.position = 'fixed';
+  menu.style.top = (rect.bottom + 4) + 'px';
+  const width = menu.offsetWidth || 220;
+  menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)) + 'px';
+}
+
+function closeFolderMenus(except) {
+  document.querySelectorAll('.bookmark-folder-menu').forEach(m => {
+    if (!except || !m.contains(except)) m.hidden = true;
+  });
+  document.querySelectorAll('.bookmark-folder[aria-expanded="true"]').forEach(b => {
+    if (!except || !b.closest('.bookmark-folder-wrap').querySelector('.bookmark-folder-menu').contains(except)) {
+      b.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
 document.addEventListener('click', (e) => {
   const folderBtn = e.target.closest('.bookmark-folder');
   if (folderBtn) {
@@ -1662,21 +1684,23 @@ document.addEventListener('click', (e) => {
     const wrap = folderBtn.closest('.bookmark-folder-wrap');
     const menu = wrap.querySelector('.bookmark-folder-menu');
     const isOpen = !menu.hidden;
-    // Close any other open folder menus
-    document.querySelectorAll('.bookmark-folder-menu').forEach(m => { m.hidden = true; });
-    document.querySelectorAll('.bookmark-folder[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    // Close other menus, but keep ancestors open so nested folders work
+    closeFolderMenus(folderBtn);
     menu.hidden = isOpen;
     folderBtn.setAttribute('aria-expanded', String(!isOpen));
+    if (!isOpen) positionFolderMenu(folderBtn, menu);
     return;
   }
   // Click on a bookmark link inside a folder menu — let it navigate, but close the menu.
   const bookmarkLink = e.target.closest('.bookmark-folder-menu .bookmark-item');
   if (!bookmarkLink) {
     // Outside click: close all folder menus
-    document.querySelectorAll('.bookmark-folder-menu').forEach(m => { m.hidden = true; });
-    document.querySelectorAll('.bookmark-folder[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    closeFolderMenus();
   }
 });
+
+// A fixed-position menu doesn't follow the bar when it scrolls — just close it.
+document.getElementById('bookmarksBarInner')?.addEventListener('scroll', () => closeFolderMenus());
 
 /* ----------------------------------------------------------------
    GOOGLE APPS LAUNCHER — 9-dot waffle dropdown with shortcuts to
