@@ -1569,138 +1569,11 @@ document.addEventListener('error', (e) => {
   }
 }, true);
 
-/* ----------------------------------------------------------------
-   BOOKMARKS BAR — render bookmarks from chrome.bookmarks at the top
-   of the page. Chrome doesn't surface its native bookmarks bar on
-   extension-overridden NTPs, so we render an in-page version.
-   ---------------------------------------------------------------- */
-const FAVICON_FALLBACK_SVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="%239a918a"/></svg>'
-);
-
-function faviconUrl(pageUrl, size = 32) {
-  // MV3 favicon API: chrome-extension://<id>/_favicon/?pageUrl=...&size=32
-  // Requires "favicon" permission in manifest.
-  try {
-    const u = new URL(chrome.runtime.getURL('/_favicon/'));
-    u.searchParams.set('pageUrl', pageUrl);
-    u.searchParams.set('size', String(size));
-    return u.toString();
-  } catch {
-    return FAVICON_FALLBACK_SVG;
-  }
-}
-
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
-
-function bookmarkItemHtml(node) {
-  // Leaf bookmark
-  const title = node.title || node.url || 'Untitled';
-  const safeTitle = escapeHtml(title);
-  const safeUrl = escapeHtml(node.url);
-  const icon = node.url
-    ? `<img class="bookmark-favicon" src="${escapeHtml(faviconUrl(node.url))}" alt="" data-fallback="1">`
-    : '';
-  return `<a class="bookmark-item" href="${safeUrl}" title="${safeTitle}" data-bookmark-url="${safeUrl}">${icon}<span class="bookmark-title">${safeTitle}</span></a>`;
-}
-
-function bookmarkFolderHtml(node) {
-  const safeTitle = escapeHtml(node.title || 'Folder');
-  // Folder icon (heroicons folder)
-  const folderSvg = `<svg class="bookmark-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>`;
-  const childrenHtml = (node.children || []).map(child =>
-    child.url ? bookmarkItemHtml(child) : bookmarkFolderHtml(child)
-  ).join('') || '<div class="bookmark-empty">Empty folder</div>';
-  return `<div class="bookmark-folder-wrap">
-    <button class="bookmark-item bookmark-folder" type="button" data-bookmark-folder="1" aria-haspopup="true" aria-expanded="false">
-      ${folderSvg}<span class="bookmark-title">${safeTitle}</span>
-    </button>
-    <div class="bookmark-folder-menu" hidden>${childrenHtml}</div>
-  </div>`;
-}
-
-async function renderBookmarksBar() {
-  const inner = document.getElementById('bookmarksBarInner');
-  const bar = document.getElementById('bookmarksBar');
-  if (!inner || !bar) return;
-  if (!chrome.bookmarks || !chrome.bookmarks.getTree) {
-    bar.style.display = 'none';
-    return;
-  }
-  try {
-    const tree = await chrome.bookmarks.getTree();
-    // The "Bookmarks bar" is typically children[0] of the root.
-    const root = tree[0];
-    const bookmarksBarNode = (root.children || []).find(c => c.id === '1') || (root.children || [])[0];
-    const items = bookmarksBarNode?.children || [];
-    if (!items.length) {
-      inner.innerHTML = '<div class="bookmark-empty">No bookmarks yet — add some to your bookmarks bar.</div>';
-      return;
-    }
-    inner.innerHTML = items.map(node =>
-      node.url ? bookmarkItemHtml(node) : bookmarkFolderHtml(node)
-    ).join('');
-    // Attach favicon fallback handlers (CSP forbids inline onerror).
-    bar.querySelectorAll('img.bookmark-favicon[data-fallback]').forEach(img => {
-      img.addEventListener('error', () => { img.src = FAVICON_FALLBACK_SVG; }, { once: true });
-    });
-  } catch (err) {
-    console.warn('[tab-out] Failed to load bookmarks:', err);
-    bar.style.display = 'none';
-  }
-}
-
-// Folder dropdowns: toggle on click, close on outside click.
-// The bar scrolls horizontally (overflow-x: auto), which forces overflow-y
-// to clip as well — an absolutely positioned menu gets cut off inside the
-// bar, so the menu is repositioned as fixed to escape that clip.
-function positionFolderMenu(btn, menu) {
-  const rect = btn.getBoundingClientRect();
-  menu.style.position = 'fixed';
-  menu.style.top = (rect.bottom + 4) + 'px';
-  const width = menu.offsetWidth || 220;
-  menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)) + 'px';
-}
-
-function closeFolderMenus(except) {
-  document.querySelectorAll('.bookmark-folder-menu').forEach(m => {
-    if (!except || !m.contains(except)) m.hidden = true;
-  });
-  document.querySelectorAll('.bookmark-folder[aria-expanded="true"]').forEach(b => {
-    if (!except || !b.closest('.bookmark-folder-wrap').querySelector('.bookmark-folder-menu').contains(except)) {
-      b.setAttribute('aria-expanded', 'false');
-    }
-  });
-}
-
-document.addEventListener('click', (e) => {
-  const folderBtn = e.target.closest('.bookmark-folder');
-  if (folderBtn) {
-    e.preventDefault();
-    const wrap = folderBtn.closest('.bookmark-folder-wrap');
-    const menu = wrap.querySelector('.bookmark-folder-menu');
-    const isOpen = !menu.hidden;
-    // Close other menus, but keep ancestors open so nested folders work
-    closeFolderMenus(folderBtn);
-    menu.hidden = isOpen;
-    folderBtn.setAttribute('aria-expanded', String(!isOpen));
-    if (!isOpen) positionFolderMenu(folderBtn, menu);
-    return;
-  }
-  // Click on a bookmark link inside a folder menu — let it navigate, but close the menu.
-  const bookmarkLink = e.target.closest('.bookmark-folder-menu .bookmark-item');
-  if (!bookmarkLink) {
-    // Outside click: close all folder menus
-    closeFolderMenus();
-  }
-});
-
-// A fixed-position menu doesn't follow the bar when it scrolls — just close it.
-document.getElementById('bookmarksBarInner')?.addEventListener('scroll', () => closeFolderMenus());
 
 /* ----------------------------------------------------------------
    GOOGLE APPS LAUNCHER — 9-dot waffle dropdown with shortcuts to
@@ -1811,5 +1684,4 @@ if (IS_PANEL) {
    INITIALIZE
    ---------------------------------------------------------------- */
 updateModeToggle();
-renderBookmarksBar();
 renderDashboard();
