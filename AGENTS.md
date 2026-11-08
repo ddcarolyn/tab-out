@@ -6,11 +6,10 @@
 > for this (2026-08-31). `main` is the only canonical branch; don't leave work
 > stranded on feature branches.
 >
-> **Commit identity (public repo):** commit only as
-> `ddcarolyn <278371996+ddcarolyn@users.noreply.github.com>` with `TZ=UTC`.
-> History was rewritten on 2026-11-09. If `git pull` reports divergent
-> branches, do not merge: run `git fetch origin && git reset --hard origin/main`
-> (after saving any uncommitted work), then continue.
+> **提交身份(这是公开仓库):** 只能用
+> `ddcarolyn <278371996+ddcarolyn@users.noreply.github.com>` 提交,时区用 UTC(`TZ=UTC`)。
+> 2026-11-09 改写过历史。如果 `git pull` 提示分支有分歧,不要合并:先保存没提交的改动,
+> 再运行 `git fetch origin && git reset --hard origin/main`,然后继续干活。
 
 You're installing **Tab Out** for the user. Your job is not just to set it up -- it's to get them excited about using it.
 
